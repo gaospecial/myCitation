@@ -1,0 +1,13 @@
+Package: myCitation
+Title: Find who cite my publication(s).
+Version: 0.0.1
+Authors@R: 
+    person("Chun-Hui", "Gao", , "gaospecial@gmail.com", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-1445-7939"))
+Description: Automatically fetch one's publication(s) and then the citation(s) of these publication(s). 
+    After that, build a report of these citations automatically. These features are useful when one wants
+    to evaluate his/her acadamic impact over the world. 
+License: GPL3 + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.2
