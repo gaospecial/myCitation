@@ -10,9 +10,9 @@
 #' @export
 #'
 #' @examples
-start_browser = function(browser = "chrome", chromever = "96.0.4664.45", port = 4445L){
+start_browser = function(browser = "chrome", chromever = "96.0.4664.45", port = 4445L, startpage = getOption("scholar_site")){
   # cleanup 4445 port
-  killtask_by_port(4445)
+  killtask_by_port(port)
   library(RSelenium)
   ## just check the browser version of Chrome and use same version of Driver
   # binman::list_versions("chromedriver")
@@ -23,7 +23,7 @@ start_browser = function(browser = "chrome", chromever = "96.0.4664.45", port = 
                     geckover = NULL,
                     phantomver = NULL)
   remDr <- driver[["client"]]
-
+  remDr$navigate(startpage)
   return(remDr)
 }
 
@@ -34,3 +34,5 @@ killtask_by_port = function(port = 4445){
   pid = as.integer(task[[1]][[6]])
   tools::pskill(pid)
 }
+
+
