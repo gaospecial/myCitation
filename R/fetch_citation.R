@@ -19,13 +19,29 @@ parse_scholar_cites = function(pageSource){
   require(rvest)
   page = pageSource %>% read_html()
   cites <- page %>% html_nodes('div.gs_r.gs_or.gs_scl')
-
-  title <- cites %>% html_nodes("h3") %>% html_text()
-  url = cites %>% html_nodes("h3 a") %>% html_attr("href")
-  cid <- cites %>% html_nodes(".gs_or_cit.gs_or_btn.gs_nph + a") %>%
+  title <- cites %>% html_node("h3") %>% html_text()
+  url = cites %>% html_node("h3") %>% html_element("a") %>% html_attr("href")
+  line2 = cites %>% html_node('div.gs_a') %>% html_text()
+  authors = line2 %>% str_remove("-.*") %>% trimws(whitespace = "[\\h\\v]")
+  journal_and_year = line2 %>% str_remove(".*?-") %>% str_remove("-.*") %>% trimws(whitespace = "[\\h\\v]")
+  journal = journal_and_year %>% str_remove("[0-9]{4}") %>% trimws(whitespace = "[\\h\\v]")
+  year = journal_and_year %>% str_extract("[0-9]{4}")
+  cid <- cites %>% html_node(".gs_or_cit.gs_or_btn.gs_nph + a") %>%
     html_attr("href") %>% str_extract("cites=[0-9]+") %>% str_remove("cites=")
-  cited_time = cites %>% html_nodes(".gs_or_cit.gs_or_btn.gs_nph + a") %>%
-    html_text() %>% str_remove("Cited by ") %>% as.integer()
+  cited_time = cites %>% html_node(".gs_or_cit.gs_or_btn.gs_nph + a") %>%
+    html_text() %>% str_extract("Cited by [0-9]+") %>% str_extract("[0-9]+")
+  ## Put it all together
+  data <- dplyr::tibble(title=title,
+                        author=authors,
+                        journal=journal,
+                        year=year,
+                        cites=cited_time,
+                        cid=cid,
+                        fulltextUrl = url)
+  return(data)
+}
+
+if (FALSE) {
   json_list = lapply(url, query_zotero_translation_server) %>%
     unlist(recursive = FALSE)
   title = sapply(json_list, function(x) x$title)
@@ -34,16 +50,6 @@ parse_scholar_cites = function(pageSource){
   numbers = sapply(json_list, function(x) paste0(x$volume,"(",x$issue,"): ", x$pages))
   date = sapply(json_list, function(x) x$date)
   year = sapply(date, function(x) lubridate::year(as.Date(x)))
-  ## Put it all together
-  data <- dplyr::tibble(title=title,
-                        author=authors,
-                        journal=journal,
-                        number=numbers,
-                        cites=cited_time,
-                        year=year,
-                        date = date,
-                        cid=cid)
-  return(data)
 }
 
 
