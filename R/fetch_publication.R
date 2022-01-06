@@ -101,7 +101,7 @@ get_scholar_resp <- function(url, attempts_left = 5, browser = NULL) {
 
 }
 
-build_scholar_publication_url = function(id, cstart = 0, cstop = Inf, pagesize=100, sortby="citation") {
+build_scholar_publication_url = function(id, cstart = 0, cstop = Inf, pagesize=20, sortby="citation") {
   ## Make sure pagesize is not greater than max allowed by Google Scholar
   if (pagesize > 100) {
     warning("pagesize: ", pagesize, " exceeds Google Scholar maximum. Setting to 100.")
