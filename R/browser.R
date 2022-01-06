@@ -10,9 +10,8 @@
 #' @export
 #'
 #' @examples
-start_browser = function(browser = "chrome", chromever = "96.0.4664.45", port = 4445L, startpage = getOption("scholar_site")){
+start_browser = function(browser = "firefox", chromever = "96.0.4664.45", geckover = "0.30.0", port = 4445L, startpage = getOption("scholar_site")){
   # cleanup 4445 port
-  killtask_by_port(port)
   library(RSelenium)
   ## just check the browser version of Chrome and use same version of Driver
   # binman::list_versions("chromedriver")
@@ -20,7 +19,7 @@ start_browser = function(browser = "chrome", chromever = "96.0.4664.45", port = 
   driver<- RSelenium::rsDriver(browser = browser,
                     port = port,
                     chromever = chromever,
-                    geckover = NULL,
+                    geckover = geckover,
                     phantomver = NULL)
   remDr <- driver[["client"]]
   remDr$navigate(startpage)
@@ -35,4 +34,9 @@ killtask_by_port = function(port = 4445){
   tools::pskill(pid)
 }
 
+view_html_in_rstudio = function(source){
+  file = tempfile(fileext = ".html")
+  writeLines(source, file)
+  rstudioapi::viewer(file)
+}
 
