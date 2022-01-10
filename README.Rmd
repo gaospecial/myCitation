@@ -38,14 +38,20 @@ This is a basic example which shows you how to solve a common problem:
 library(myCitation)
 ## basic example code
 
-scholar::set_scholar_mirror("https://sc.panda321.com")
+scholar::set_scholar_mirror("https://xs2.dailyheadlines.cc/")
 chromever = "96.0.4664.45"
 geckover = "0.30.0"
 port = 4445L
 killtask_by_port(port)
-driver<- RSelenium::rsDriver(browser = "chrome",
+remDr <- RSelenium::remoteDriver(
+  remoteServerAddr = "localhost",
+  port = 4444L,
+  browserName = "firefox"
+)
+remDr$open()
+driver<- RSelenium::rsDriver(browser = "firefox",
                   port = port,
-                  chromever = chromever,
+                  chromever = NULL,
                   geckover = geckover,
                   phantomver = NULL)
 browser <- driver[["client"]]
@@ -58,6 +64,8 @@ browser$navigate(profile_url)
 ### Publications
 
 ```{r}
+library(stringr)
+library(dplyr)
 data("profilePageSource")
 publication = parse_scholar_publications(profilePageSource)
 publication
@@ -107,6 +115,7 @@ citations = lapply(citation_url2, function(url){
 ```
 
 ```{r}
+library(tibble)
 old_result = lapply(citations, function(x){
   tryCatch(parse_scholar_cites(x),
            error = function(e) e)
@@ -129,6 +138,7 @@ old_success = lapply(old_result, function(x) {
 
 table(old_success)
 
+
 new_success = lapply(new_result, function(x) {
   if (!is_tibble(x)){
     return(FALSE)
@@ -141,6 +151,7 @@ new_success = lapply(new_result, function(x) {
 
 table(new_success)
 
+success = old_success
 
 if ( identical(old_success, new_success)){
   warning("new result is equal to old one.")
@@ -159,6 +170,7 @@ citation_pageSource = vector("list", length(citation_url2))
 
 
 ```{r}
+# wait randomly
 wait = rnorm(100,30,20) %>% round() %>% abs()
 for (i in seq_along(citation_url2)){
   is_success = success[[i]]
@@ -176,11 +188,16 @@ for (i in seq_along(citation_url2)){
 #### From Citation Page Sources to Tibble
 
 ```{r}
-while (length(failed_index) > 5) {
-  
-}
-
+library(dplyr)
 citation_data = lapply(citations, parse_scholar_cites) %>%
   bind_rows()
+
+unique_fulltextUrl = unique(citation_data$fulltextUrl)
+zotero_json = lapply(unique_fulltextUrl, function(x){
+  result = tryCatch(query_zotero_translation_server(x),
+           error = function(e) "Error")
+  Sys.sleep(1)
+  return(result)
+})
 ```
 
