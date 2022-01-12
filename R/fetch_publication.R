@@ -101,6 +101,17 @@ get_scholar_resp <- function(url, attempts_left = 5, browser = NULL) {
 
 }
 
+#' Build Google scholar publication url
+#'
+#' @param id
+#' @param cstart
+#' @param cstop
+#' @param pagesize
+#' @param sortby
+#'
+#' @return
+#'
+#' @examples
 build_scholar_publication_url = function(id, cstart = 0, cstop = Inf, pagesize=20, sortby="citation") {
   ## Make sure pagesize is not greater than max allowed by Google Scholar
   if (pagesize > 100) {
@@ -125,40 +136,47 @@ build_scholar_publication_url = function(id, cstart = 0, cstop = Inf, pagesize=2
 }
 
 
+#' Parse Google scholar publications
+#'
+#' @param pageSource Html page source of a Google scholar profile page
+#'
+#' @return
+#' @export
+#'
+#' @examples
 parse_scholar_publications = function(pageSource){
-  require(rvest)
-  page = pageSource %>% read_html()
-  cites <- page %>% html_nodes(xpath="//tr[@class='gsc_a_tr']")
+  page = pageSource %>% rvest::read_html()
+  cites <- page %>% rvest::html_nodes(xpath="//tr[@class='gsc_a_tr']")
 
-  title <- cites %>% html_nodes(".gsc_a_at") %>% html_text()
-  pubid <- cites %>% html_nodes(".gsc_a_at") %>%
-    html_attr("href") %>% str_extract(":.*$") %>% str_sub(start=2)
-  doc_id <- cites %>% html_nodes(".gsc_a_ac") %>% html_attr("href") %>%
-    str_extract("cites=.*$") %>% str_sub(start=7)
-  cited_by <- suppressWarnings(cites %>% html_nodes(".gsc_a_ac") %>%
-                                 html_text() %>%
+  title <- cites %>% rvest::html_nodes(".gsc_a_at") %>% rvest::html_text()
+  pubid <- cites %>% rvest::html_nodes(".gsc_a_at") %>%
+    rvest::html_attr("href") %>% stringr::str_extract(":.*$") %>% stringr::str_sub(start=2)
+  doc_id <- cites %>% rvest::html_nodes(".gsc_a_ac") %>% rvest::html_attr("href") %>%
+    stringr::str_extract("cites=.*$") %>% stringr::str_sub(start=7)
+  cited_by <- suppressWarnings(cites %>% rvest::html_nodes(".gsc_a_ac") %>%
+                                 rvest::html_text() %>%
                                  as.numeric(.) %>% replace(is.na(.), 0))
-  year <- cites %>% html_nodes(".gsc_a_y") %>% html_text() %>%
+  year <- cites %>% rvest::html_nodes(".gsc_a_y") %>% rvest::html_text() %>%
     as.numeric()
-  authors <- cites %>% html_nodes("td .gs_gray") %>% html_text() %>%
+  authors <- cites %>% rvest::html_nodes("td .gs_gray") %>% rvest::html_text() %>%
     as.data.frame(stringsAsFactors=FALSE) %>%
-    filter(row_number() %% 2 == 1)  %>% .[[1]]
+    dplyr::filter(dplyr::row_number() %% 2 == 1)  %>% .[[1]]
 
   ## Get the more complicated parts
-  details <- cites %>% html_nodes("td .gs_gray") %>% html_text() %>%
+  details <- cites %>% rvest::html_nodes("td .gs_gray") %>% rvest::html_text() %>%
     as.data.frame(stringsAsFactors=FALSE) %>%
-    filter(row_number() %% 2 == 0) %>% .[[1]]
+    dplyr::filter(dplyr::row_number() %% 2 == 0) %>% .[[1]]
 
 
   ## Clean up the journal titles (assume there are no numbers in
   ## the journal title)
   first_digit <- as.numeric(regexpr("[\\[\\(]?\\d", details)) - 1
-  journal <- str_trim(str_sub(details, end=first_digit)) %>%
-    str_replace(",$", "")
+  journal <- stringr::str_trim(stringr::str_sub(details, end=first_digit)) %>%
+    stringr::str_replace(",$", "")
 
   ## Clean up the numbers part
-  numbers <- str_sub(details, start=first_digit) %>%
-    str_trim() %>% str_sub(end=-5) %>% str_trim() %>% str_replace(",$", "")
+  numbers <- stringr::str_sub(details, start=first_digit) %>%
+    stringr::str_trim() %>% stringr::str_sub(end=-5) %>% stringr::str_trim() %>% stringr::str_replace(",$", "")
 
   ## Put it all together
   data <- dplyr::tibble(title=title,
