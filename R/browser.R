@@ -26,6 +26,33 @@ start_browser = function(browser = "firefox", chromever = "96.0.4664.45", geckov
   return(remDr)
 }
 
+#' get page source
+#'
+#' @param url
+#' @param browser
+#' @param retry
+#'
+#' @return
+#' @export
+#'
+#' @examples
+get_pagesource = function(url, browser, retry = 3, wait = 3){
+  if (retry == 0){
+    warning("Failed in get: ", url, "\n")
+    return(NULL)
+  }
+  browser$navigate(url)
+  pageSource = browser$getPageSource()[[1]]
+  if (str_detect(pageSource, "请完成安全验证")){
+    invisible(readline(prompt="Please pass the verification, and press [enter] to continue"))
+    pageSource = get_pagesource(url = url, browser = browser, retry - 1)
+  } else if (str_detect(pageSource, "网络错误")) {
+    Sys.sleep(wait)
+    pageSource = get_pagesource(url = url, browser = browser, retry - 1)
+  }
+  return(pageSource)
+}
+
 killtask_by_port = function(port = 4445){
   task = system("netstat -aon", intern = TRUE)
   task = strsplit(task[grep(paste0("0.0.0.0:", port),task)], split = "\\s+")
