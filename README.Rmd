@@ -189,9 +189,20 @@ for (i in seq_along(citation_url2)){
 
 ```{r}
 library(dplyr)
-citation_data = lapply(citations, parse_scholar_cites) %>%
-  bind_rows()
+citation_list = lapply(citations, parse_scholar_cites)
+n = lapply(citation_list, nrow) %>% unlist()
 
+cid = str_extract(citation_url2, "[0-9,]+$")
+source = rep(cid, time = n)
+
+citation_data = bind_rows(citation_list)
+citation_data$source = source
+
+usethis::use_data(citation_data, overwrite = TRUE)
+```
+
+
+```{r}
 unique_fulltextUrl = unique(citation_data$fulltextUrl)
 zotero_json = lapply(unique_fulltextUrl, function(x){
   result = tryCatch(query_zotero_translation_server(x),
@@ -199,5 +210,20 @@ zotero_json = lapply(unique_fulltextUrl, function(x){
   Sys.sleep(1)
   return(result)
 })
+```
+
+```{r}
+data("zotero_json")
+zotero_data = lapply(seq_along(zotero_json), function(i){
+  d = parse_zotero_json(zotero_json[[i]])
+  d$fulltextUrl = unique_fulltextUrl[[i]]
+  return(d)
+}) %>% bind_rows() %>%
+  tidyr::drop_na(title, publicationTitle, fulltextUrl)
+usethis::use_data(zotero_data, overwrite = TRUE)
+```
+
+```{r}
+citation_data %>% left_join(zotero_data %>% select(-title)) %>% filter(is.na(publicationTitle))
 ```
 
